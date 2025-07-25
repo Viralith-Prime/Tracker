@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military Air-Traffic Intelligence System</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-fighter-jet"></i> Military Air-Traffic Intelligence System</h1>
+                <div class="header-controls">
+                    <div class="status-indicator" id="status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Connecting...</span>
+                    </div>
+                    <button class="btn btn-secondary" id="settings-btn">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-plane"></i> Active Military Aircraft</h3>
+                    <div class="aircraft-count">
+                        <span id="aircraft-count">0</span> aircraft tracked
+                    </div>
+                    <div class="aircraft-list" id="aircraft-list">
+                        <!-- Aircraft entries will be populated here -->
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-filter"></i> Filters</h3>
+                    <div class="filter-group">
+                        <label>
+                            <input type="checkbox" id="filter-fighters" checked>
+                            <span>Fighter Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-transports" checked>
+                            <span>Transport Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-tankers" checked>
+                            <span>Tanker Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-surveillance" checked>
+                            <span>Surveillance Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-helicopters" checked>
+                            <span>Military Helicopters</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-chart-line"></i> Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Tracked</span>
+                            <span class="stat-value" id="total-tracked">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Active Sources</span>
+                            <span class="stat-value" id="active-sources">2</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Last Update</span>
+                            <span class="stat-value" id="last-update">--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button class="map-btn" id="center-map" title="Center on visible aircraft">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                    <button class="map-btn" id="toggle-trails" title="Toggle flight trails">
+                        <i class="fas fa-route"></i>
+                    </button>
+                    <button class="map-btn" id="toggle-labels" title="Toggle aircraft labels">
+                        <i class="fas fa-tags"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Aircraft Detail Modal -->
+        <div class="modal" id="aircraft-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">Aircraft Details</h2>
+                    <button class="modal-close" id="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Aircraft details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal" id="settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Settings</h2>
+                    <button class="modal-close" id="settings-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="update-interval">Update Interval (seconds)</label>
+                        <select id="update-interval">
+                            <option value="5">5 seconds</option>
+                            <option value="10" selected>10 seconds</option>
+                            <option value="15">15 seconds</option>
+                            <option value="30">30 seconds</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="data-source">Primary Data Source</label>
+                        <select id="data-source">
+                            <option value="adsb.fi" selected>adsb.fi (Community)</option>
+                            <option value="adsb.lol">ADSB.lol (Open Source)</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="enable-sounds" checked>
+                            Enable notification sounds
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="enable-patterns" checked>
+                            Track flight patterns
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="aircraft-database.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
