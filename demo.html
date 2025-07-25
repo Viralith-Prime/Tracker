@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military Air-Traffic Intelligence System - Demo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .demo-banner {
+            background: var(--warning-color);
+            color: var(--background-dark);
+            padding: 0.5rem 2rem;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Demo Banner -->
+        <div class="demo-banner">
+            ⚠️ DEMO MODE - Using Simulated Military Aircraft Data for Demonstration
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-fighter-jet"></i> Military Air-Traffic Intelligence System</h1>
+                <div class="header-controls">
+                    <div class="status-indicator" id="status">
+                        <span class="status-dot connected"></span>
+                        <span class="status-text">Demo Mode Active</span>
+                    </div>
+                    <button class="btn btn-secondary" id="settings-btn">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-plane"></i> Active Military Aircraft</h3>
+                    <div class="aircraft-count">
+                        <span id="aircraft-count">0</span> aircraft tracked
+                    </div>
+                    <div class="aircraft-list" id="aircraft-list">
+                        <!-- Aircraft entries will be populated here -->
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-filter"></i> Filters</h3>
+                    <div class="filter-group">
+                        <label>
+                            <input type="checkbox" id="filter-fighters" checked>
+                            <span>Fighter Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-transports" checked>
+                            <span>Transport Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-tankers" checked>
+                            <span>Tanker Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-surveillance" checked>
+                            <span>Surveillance Aircraft</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filter-helicopters" checked>
+                            <span>Military Helicopters</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-chart-line"></i> Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Tracked</span>
+                            <span class="stat-value" id="total-tracked">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Demo Sources</span>
+                            <span class="stat-value" id="active-sources">1</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Last Update</span>
+                            <span class="stat-value" id="last-update">--:--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-info-circle"></i> Demo Information</h3>
+                    <div style="background: var(--secondary-color); padding: 1rem; border-radius: 0.25rem; font-size: 0.875rem;">
+                        <p style="margin-bottom: 0.5rem;"><strong>This is a demonstration</strong> of the military flight tracker using simulated aircraft data.</p>
+                        <p style="margin-bottom: 0.5rem;">The live version connects to:</p>
+                        <ul style="margin: 0.5rem 0 0 1rem; padding: 0;">
+                            <li>adsb.fi public API</li>
+                            <li>ADSB.lol public API</li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button class="map-btn" id="center-map" title="Center on visible aircraft">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                    <button class="map-btn" id="toggle-trails" title="Toggle flight trails">
+                        <i class="fas fa-route"></i>
+                    </button>
+                    <button class="map-btn" id="toggle-labels" title="Toggle aircraft labels">
+                        <i class="fas fa-tags"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Aircraft Detail Modal -->
+        <div class="modal" id="aircraft-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">Aircraft Details</h2>
+                    <button class="modal-close" id="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Aircraft details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal" id="settings-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Demo Settings</h2>
+                    <button class="modal-close" id="settings-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="update-interval">Update Interval (seconds)</label>
+                        <select id="update-interval">
+                            <option value="5">5 seconds</option>
+                            <option value="10" selected>10 seconds</option>
+                            <option value="15">15 seconds</option>
+                            <option value="30">30 seconds</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="data-source">Demo Data Source</label>
+                        <select id="data-source">
+                            <option value="demo" selected>Simulated Data</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="enable-sounds" checked>
+                            Enable notification sounds
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="enable-patterns" checked>
+                            Track flight patterns
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="aircraft-database.js"></script>
+    <script>
+        // Demo data for military aircraft
+        const DEMO_AIRCRAFT_DATA = {
+            ac: [
+                {
+                    hex: 'AE01CE',
+                    flight: 'RCH634',
+                    lat: 38.9072,
+                    lon: -77.0369,
+                    alt_baro: 35000,
+                    gs: 480,
+                    track: 90,
+                    t: 'C17'
+                },
+                {
+                    hex: 'AE1234',
+                    flight: 'POLO52',
+                    lat: 39.1031,
+                    lon: -84.5120,
+                    alt_baro: 28000,
+                    gs: 380,
+                    track: 270,
+                    t: 'KC135'
+                },
+                {
+                    hex: 'AE5678',
+                    flight: 'DARKST01',
+                    lat: 32.3617,
+                    lon: -86.2792,
+                    alt_baro: 42000,
+                    gs: 520,
+                    track: 180,
+                    t: 'U2'
+                },
+                {
+                    hex: 'AE9ABC',
+                    flight: 'GRIM99',
+                    lat: 33.3561,
+                    lon: -111.7570,
+                    alt_baro: 15000,
+                    gs: 250,
+                    track: 45,
+                    t: 'A10'
+                },
+                {
+                    hex: 'AEDEF0',
+                    flight: 'AWACS31',
+                    lat: 35.2271,
+                    lon: -80.8431,
+                    alt_baro: 30000,
+                    gs: 420,
+                    track: 315,
+                    t: 'E3'
+                },
+                {
+                    hex: 'AE1111',
+                    flight: 'SPAR19',
+                    lat: 40.7128,
+                    lon: -74.0060,
+                    alt_baro: 41000,
+                    gs: 550,
+                    track: 60,
+                    t: 'C40'
+                }
+            ]
+        };
+
+        // Modified tracker class for demo mode
+        class DemoMilitaryFlightTracker {
+            constructor() {
+                this.aircraftDatabase = new AircraftDatabase();
+                this.map = null;
+                this.aircraftMarkers = new Map();
+                this.aircraftData = new Map();
+                this.settings = { updateInterval: 10, dataSource: 'demo' };
+                this.updateInterval = null;
+                this.lastUpdate = null;
+                this.isConnected = true;
+                this.showTrails = false;
+                this.showLabels = true;
+                this.enabledFilters = ['fighter', 'transport', 'tanker', 'surveillance', 'helicopter'];
+                
+                this.init();
+            }
+
+            async init() {
+                this.initializeMap();
+                this.bindEventListeners();
+                
+                // Load demo data
+                this.processMilitaryData(DEMO_AIRCRAFT_DATA, 'demo');
+                this.startUpdateLoop();
+                
+                this.updateFilters();
+                this.updateStatistics();
+            }
+
+            initializeMap() {
+                this.map = L.map('map', {
+                    center: [39.8283, -98.5795],
+                    zoom: 4,
+                    zoomControl: false
+                });
+
+                L.control.zoom({
+                    position: 'bottomright'
+                }).addTo(this.map);
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(this.map);
+
+                this.createAircraftIcon = (aircraft) => {
+                    const color = this.aircraftDatabase.getAircraftColor(aircraft.category);
+                    const icon = this.aircraftDatabase.getAircraftIcon(aircraft.category);
+                    
+                    return L.divIcon({
+                        html: `<div style="
+                            background: ${color};
+                            color: white;
+                            border: 2px solid #fff;
+                            border-radius: 50%;
+                            width: 30px;
+                            height: 30px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 14px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                            transform: rotate(${aircraft.heading || 0}deg);
+                        ">${icon}</div>`,
+                        className: 'aircraft-marker',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+                };
+            }
+
+            bindEventListeners() {
+                // Settings modal
+                document.getElementById('settings-btn').addEventListener('click', () => {
+                    this.showModal('settings-modal');
+                });
+                document.getElementById('settings-close').addEventListener('click', () => {
+                    this.hideModal('settings-modal');
+                });
+
+                // Aircraft detail modal
+                document.getElementById('modal-close').addEventListener('click', () => {
+                    this.hideModal('aircraft-modal');
+                });
+
+                // Map controls
+                document.getElementById('center-map').addEventListener('click', () => {
+                    this.centerMapOnAircraft();
+                });
+
+                // Filter checkboxes
+                const filterIds = ['filter-fighters', 'filter-transports', 'filter-tankers', 'filter-surveillance', 'filter-helicopters'];
+                const filterCategories = ['fighter', 'transport', 'tanker', 'surveillance', 'helicopter'];
+                
+                filterIds.forEach((id, index) => {
+                    document.getElementById(id).addEventListener('change', (e) => {
+                        const category = filterCategories[index];
+                        if (e.target.checked) {
+                            if (!this.enabledFilters.includes(category)) {
+                                this.enabledFilters.push(category);
+                            }
+                        } else {
+                            this.enabledFilters = this.enabledFilters.filter(f => f !== category);
+                        }
+                        this.updateMapDisplay();
+                    });
+                });
+
+                // Close modals when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('modal')) {
+                        this.hideModal(e.target.id);
+                    }
+                });
+            }
+
+            processMilitaryData(data, source) {
+                const currentTime = Date.now();
+
+                data.ac.forEach(aircraft => {
+                    if (!aircraft.lat || !aircraft.lon) return;
+
+                    const enrichedAircraft = this.aircraftDatabase.enrichAircraft(aircraft);
+                    enrichedAircraft.dataSource = source;
+                    enrichedAircraft.lastSeen = currentTime;
+
+                    this.aircraftData.set(enrichedAircraft.id, enrichedAircraft);
+                    this.updateAircraftMarker(enrichedAircraft);
+                });
+
+                this.lastUpdate = currentTime;
+                this.updateSidebar();
+                this.updateStatistics();
+            }
+
+            updateAircraftMarker(aircraft) {
+                const position = [aircraft.lat, aircraft.lon];
+                
+                if (this.aircraftMarkers.has(aircraft.id)) {
+                    const marker = this.aircraftMarkers.get(aircraft.id);
+                    marker.setLatLng(position);
+                    marker.setIcon(this.createAircraftIcon(aircraft));
+                } else {
+                    const marker = L.marker(position, {
+                        icon: this.createAircraftIcon(aircraft)
+                    }).addTo(this.map);
+
+                    const popupContent = this.createPopupContent(aircraft);
+                    marker.bindPopup(popupContent);
+
+                    marker.on('click', () => {
+                        this.showAircraftDetails(aircraft);
+                    });
+
+                    this.aircraftMarkers.set(aircraft.id, marker);
+                }
+            }
+
+            createPopupContent(aircraft) {
+                const callsign = aircraft.flight || 'Unknown';
+                const type = aircraft.aircraftName || aircraft.t || 'Unknown';
+                const altitude = aircraft.altitude ? `${aircraft.altitude.toLocaleString()}ft` : 'Unknown';
+                const speed = aircraft.speed ? `${aircraft.speed}kts` : 'Unknown';
+                const country = aircraft.countryInfo ? `${aircraft.countryInfo.flag} ${aircraft.countryInfo.name}` : '';
+
+                return `
+                    <div class="aircraft-popup">
+                        <div class="callsign">${callsign}</div>
+                        <div class="detail"><span class="label">Type:</span>${type}</div>
+                        <div class="detail"><span class="label">Altitude:</span>${altitude}</div>
+                        <div class="detail"><span class="label">Speed:</span>${speed}</div>
+                        ${country ? `<div class="detail"><span class="label">Country:</span>${country}</div>` : ''}
+                        <div class="detail"><span class="label">Category:</span>${aircraft.category}</div>
+                    </div>
+                `;
+            }
+
+            updateSidebar() {
+                const aircraftList = document.getElementById('aircraft-list');
+                const filteredAircraft = this.aircraftDatabase.filterByCategory(
+                    Array.from(this.aircraftData.values()),
+                    this.enabledFilters
+                );
+
+                filteredAircraft.sort((a, b) => {
+                    const priorityA = a.categoryInfo?.priority || 5;
+                    const priorityB = b.categoryInfo?.priority || 5;
+                    if (priorityA !== priorityB) {
+                        return priorityA - priorityB;
+                    }
+                    return (b.intelligence?.significance || 0) - (a.intelligence?.significance || 0);
+                });
+
+                aircraftList.innerHTML = '';
+
+                filteredAircraft.forEach(aircraft => {
+                    const item = document.createElement('div');
+                    item.className = 'aircraft-item';
+                    item.addEventListener('click', () => {
+                        this.showAircraftDetails(aircraft);
+                        this.map.setView([aircraft.lat, aircraft.lon], 10);
+                    });
+
+                    const callsign = aircraft.flight || 'Unknown';
+                    const type = aircraft.aircraftName || aircraft.t || 'Unknown';
+                    const country = aircraft.countryInfo ? aircraft.countryInfo.flag : '';
+
+                    item.innerHTML = `
+                        <div class="aircraft-callsign">${country} ${callsign}</div>
+                        <div class="aircraft-type">${type}</div>
+                        <div class="aircraft-details">
+                            <div>Alt: ${aircraft.altitude ? aircraft.altitude.toLocaleString() + 'ft' : 'N/A'}</div>
+                            <div>Spd: ${aircraft.speed || 'N/A'}kts</div>
+                            <div>Cat: ${aircraft.category}</div>
+                            <div>Sig: ${aircraft.intelligence?.significance || 1}/5</div>
+                        </div>
+                    `;
+
+                    aircraftList.appendChild(item);
+                });
+
+                document.getElementById('aircraft-count').textContent = filteredAircraft.length;
+            }
+
+            showAircraftDetails(aircraft) {
+                const modal = document.getElementById('aircraft-modal');
+                const title = document.getElementById('modal-title');
+                const body = document.getElementById('modal-body');
+
+                const callsign = aircraft.flight || 'Unknown';
+                const type = aircraft.aircraftName || aircraft.t || 'Unknown';
+                
+                title.textContent = `${callsign} - ${type}`;
+
+                const links = this.aircraftDatabase.generateResearchLinks(aircraft);
+                const nNumber = this.aircraftDatabase.icaoToNNumber(aircraft.hex);
+
+                body.innerHTML = `
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Callsign</span>
+                            <span class="detail-value">${callsign}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Aircraft Type</span>
+                            <span class="detail-value">${type}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">ICAO Hex</span>
+                            <span class="detail-value">${aircraft.hex || 'Unknown'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Registration</span>
+                            <span class="detail-value">${nNumber || 'N/A'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Altitude</span>
+                            <span class="detail-value">${aircraft.altitude ? aircraft.altitude.toLocaleString() + ' ft' : 'Unknown'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Ground Speed</span>
+                            <span class="detail-value">${aircraft.speed || 'Unknown'} kts</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Heading</span>
+                            <span class="detail-value">${aircraft.heading || 'Unknown'}°</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Category</span>
+                            <span class="detail-value">${aircraft.category}</span>
+                        </div>
+                    </div>
+
+                    ${aircraft.intelligence ? `
+                        <div style="margin: 1.5rem 0;">
+                            <h4>Intelligence Assessment</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Significance</span>
+                                    <span class="detail-value">${aircraft.intelligence.significance}/5</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Mission Type</span>
+                                    <span class="detail-value">${aircraft.intelligence.missionType}</span>
+                                </div>
+                            </div>
+                            ${aircraft.intelligence.notes.length > 0 ? `
+                                <div style="margin-top: 1rem;">
+                                    <strong>Analysis Notes:</strong>
+                                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                                        ${aircraft.intelligence.notes.map(note => `<li>${note}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+
+                    <div style="margin: 1rem 0; padding: 1rem; background: var(--secondary-color); border-radius: 0.25rem;">
+                        <small>
+                            <strong>Demo Data:</strong> This is simulated aircraft data for demonstration purposes. The live version would show real military aircraft positions.
+                        </small>
+                    </div>
+                `;
+
+                this.showModal('aircraft-modal');
+            }
+
+            updateMapDisplay() {
+                this.aircraftMarkers.forEach((marker, id) => {
+                    const aircraft = this.aircraftData.get(id);
+                    if (aircraft && this.enabledFilters.includes(aircraft.category)) {
+                        marker.addTo(this.map);
+                    } else {
+                        this.map.removeLayer(marker);
+                    }
+                });
+                this.updateSidebar();
+            }
+
+            centerMapOnAircraft() {
+                const visibleAircraft = Array.from(this.aircraftData.values())
+                    .filter(aircraft => this.enabledFilters.includes(aircraft.category));
+
+                if (visibleAircraft.length === 0) return;
+
+                if (visibleAircraft.length === 1) {
+                    const aircraft = visibleAircraft[0];
+                    this.map.setView([aircraft.lat, aircraft.lon], 8);
+                } else {
+                    const group = new L.featureGroup(
+                        visibleAircraft.map(aircraft => this.aircraftMarkers.get(aircraft.id))
+                            .filter(marker => marker)
+                    );
+                    this.map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+
+            updateStatistics() {
+                document.getElementById('total-tracked').textContent = this.aircraftData.size;
+                document.getElementById('last-update').textContent = 
+                    this.lastUpdate ? new Date(this.lastUpdate).toLocaleTimeString() : '--:--';
+            }
+
+            updateFilters() {
+                const filterMap = {
+                    'filter-fighters': 'fighter',
+                    'filter-transports': 'transport',
+                    'filter-tankers': 'tanker',
+                    'filter-surveillance': 'surveillance',
+                    'filter-helicopters': 'helicopter'
+                };
+
+                Object.entries(filterMap).forEach(([id, category]) => {
+                    document.getElementById(id).checked = this.enabledFilters.includes(category);
+                });
+            }
+
+            showModal(modalId) {
+                document.getElementById(modalId).classList.add('active');
+            }
+
+            hideModal(modalId) {
+                document.getElementById(modalId).classList.remove('active');
+            }
+
+            startUpdateLoop() {
+                // Simulate periodic updates
+                this.updateInterval = setInterval(() => {
+                    // Slightly modify aircraft positions for demo
+                    this.aircraftData.forEach(aircraft => {
+                        aircraft.lat += (Math.random() - 0.5) * 0.01;
+                        aircraft.lon += (Math.random() - 0.5) * 0.01;
+                        aircraft.altitude += (Math.random() - 0.5) * 500;
+                        aircraft.speed += (Math.random() - 0.5) * 10;
+                        this.updateAircraftMarker(aircraft);
+                    });
+                    this.lastUpdate = Date.now();
+                    this.updateStatistics();
+                }, 10000);
+            }
+        }
+
+        // Initialize demo application
+        document.addEventListener('DOMContentLoaded', () => {
+            window.demoTracker = new DemoMilitaryFlightTracker();
+        });
+    </script>
+</body>
+</html>
